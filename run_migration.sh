@@ -19,6 +19,16 @@ PHASES=(
   "08_fk_and_final_index_changes.sql"
 )
 
+FROM_STEP="${FROM:-${1:-01}}"
+if [[ "$FROM_STEP" =~ ^[0-9]$ ]]; then
+  FROM_STEP="0$FROM_STEP"
+fi
+
+if [[ ! "$FROM_STEP" =~ ^[0-9]{2}$ ]]; then
+  echo "ERROR: start step must be 2 digits (e.g. 01, 05, 08). Got: $FROM_STEP"
+  exit 1
+fi
+
 if [[ ! -d "$SQL_DIR" ]]; then
   echo "ERROR: phases directory not found: $SQL_DIR"
   exit 1
@@ -28,12 +38,19 @@ echo "Migration started at $(date)" | tee -a "$LOG"
 echo "Host: $HOST" | tee -a "$LOG"
 echo "Database: $DB" | tee -a "$LOG"
 echo "SQL_DIR: $SQL_DIR" | tee -a "$LOG"
+echo "Starting from step: $FROM_STEP" | tee -a "$LOG"
 echo "Log: $LOG" | tee -a "$LOG"
 
 for f in "${PHASES[@]}"; do
   if [[ ! -f "$SQL_DIR/$f" ]]; then
     echo "ERROR: missing phase file: $SQL_DIR/$f" | tee -a "$LOG"
     exit 1
+  fi
+
+  step="${f%%_*}"
+  if [[ "$step" < "$FROM_STEP" ]]; then
+    echo "===== SKIP: $f (before step $FROM_STEP) =====" | tee -a "$LOG"
+    continue
   fi
 
   echo "===== RUNNING: $f =====" | tee -a "$LOG"
