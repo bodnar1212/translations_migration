@@ -29,6 +29,20 @@ if [[ ! "$FROM_STEP" =~ ^[0-9]{2}$ ]]; then
   exit 1
 fi
 
+VALID_FROM=0
+for f in "${PHASES[@]}"; do
+  if [[ "${f%%_*}" == "$FROM_STEP" ]]; then
+    VALID_FROM=1
+    break
+  fi
+done
+
+if [[ "$VALID_FROM" -ne 1 ]]; then
+  echo "ERROR: unknown start step: $FROM_STEP"
+  echo "Allowed steps: 01 02 03 04 05 06 07 08"
+  exit 1
+fi
+
 if [[ ! -d "$SQL_DIR" ]]; then
   echo "ERROR: phases directory not found: $SQL_DIR"
   exit 1
@@ -41,6 +55,7 @@ echo "SQL_DIR: $SQL_DIR" | tee -a "$LOG"
 echo "Starting from step: $FROM_STEP" | tee -a "$LOG"
 echo "Log: $LOG" | tee -a "$LOG"
 
+RAN_ANY=0
 for f in "${PHASES[@]}"; do
   if [[ ! -f "$SQL_DIR/$f" ]]; then
     echo "ERROR: missing phase file: $SQL_DIR/$f" | tee -a "$LOG"
@@ -54,11 +69,17 @@ for f in "${PHASES[@]}"; do
   fi
 
   echo "===== RUNNING: $f =====" | tee -a "$LOG"
+  RAN_ANY=1
   mysql -h "$HOST" -P "$PORT" -u "$USER" -p "$DB" \
     --show-warnings --verbose --table --comments \
     < "$SQL_DIR/$f" | stdbuf -oL tee -a "$LOG"
   echo "===== DONE: $f =====" | tee -a "$LOG"
 done
+
+if [[ "$RAN_ANY" -ne 1 ]]; then
+  echo "ERROR: no phases were executed."
+  exit 1
+fi
 
 echo "Migration finished at $(date)" | tee -a "$LOG"
 echo "Log: $LOG"
