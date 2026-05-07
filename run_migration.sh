@@ -38,7 +38,7 @@ for f in "${PHASES[@]}"; do
 
   echo "===== RUNNING: $f =====" | tee -a "$LOG"
   mysql -h "$HOST" -P "$PORT" -u "$USER" -p "$DB" \
-    --connect-timeout=30 --show-warnings --verbose --table --comments \
+    --show-warnings --verbose --table --comments \
     < "$SQL_DIR/$f" | stdbuf -oL tee -a "$LOG"
   echo "===== DONE: $f =====" | tee -a "$LOG"
 done
