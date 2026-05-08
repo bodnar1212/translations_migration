@@ -3,6 +3,8 @@ SET SESSION read_buffer_size = 4194304;
 SET SESSION transaction_isolation = 'READ-COMMITTED';
 
 ALTER TABLE original_text
-    ADD INDEX IDX_31FECCF135B31D68CDE5729 (project_iri, type),
+    ADD INDEX IDX_31FECCF135B31D68CDE5729 (project_iri(50), type),
+    ADD INDEX text_index (text(500)),
+    ADD INDEX IDX_31FECCF135B31D63B8BA7C7BF396750 (project_iri(50), text(500), id),
     ADD UNIQUE INDEX UNIQ_31FECCF1D1B862B835B31D6 (hash, project_iri),
     DROP INDEX idx_dedupe_tmp;
